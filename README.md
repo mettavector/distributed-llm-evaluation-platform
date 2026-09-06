@@ -19,7 +19,7 @@ curl http://localhost:8000/health
 Expected response:
 
 ```json
-{"status":"ok"}
+{ "status": "ok" }
 ```
 
 FastAPI's generated API documentation is available at <http://localhost:8000/docs>.
