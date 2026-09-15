@@ -10,3 +10,15 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+  worker:
+    build: .
+    command:
+      [
+        "watchfiles",
+        "--filter",
+        "python",
+        "python -u app/worker.py",
+        "/app/app",
+      ]
+    volumes:
+      - .:/app
