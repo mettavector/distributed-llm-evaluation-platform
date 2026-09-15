@@ -10,7 +10,6 @@ from rabbitmq_amqp_python_client import (
 )
 from contextlib import asynccontextmanager
 
-exchange_name = "runs"
 queue_name = "runs_queue"
 routing_key = "runs"
 queue_address = AddressHelper.queue_address(queue_name)
@@ -31,7 +30,6 @@ async def lifespan(app: FastAPI):
     management.declare_queue(
         ClassicQueueSpecification(
             name=queue_name,
-            message_ttl=timedelta(minutes=10),
             max_len_bytes=100000000 # 100MB
         ),
     )       
