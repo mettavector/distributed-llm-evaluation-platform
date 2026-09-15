@@ -1,25 +1,55 @@
 import json
-from fastapi import FastAPI
+from datetime import (timedelta, datetime)
+from zoneinfo import ZoneInfo
+
+from fastapi import FastAPI, Request
 from uuid import UUID, uuid4
-from rabbitmq_amqp_python_client import (Connection, Message, Environment)
+from rabbitmq_amqp_python_client import (
+    Connection, Message, Environment, 
+    ClassicQueueSpecification, ExchangeSpecification, AddressHelper
+)
 from contextlib import asynccontextmanager
 
-
-# def create_connection() -> Connection: 
-#     connection.dial()
-#     return connection
-connection = None
+exchange_name = "runs"
+queue_name = "runs_queue"
+routing_key = "runs"
+queue_address = AddressHelper.queue_address(queue_name)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    exchange_name = "runs"
-    queue_name = "runs_queue"
-    routing_key = "runs"
     environment = Environment(uri="amqp://guest:guest@queue:5672")
     connection = environment.connection()
     connection.dial()
-    yield
-    environment.close()
+
+    app.state.connection = connection
+
+    # Declare queue
+    management = connection.management()
+
+    # management.delete_queue(name=queue_name)
+
+    management.declare_queue(
+        ClassicQueueSpecification(
+            name=queue_name,
+            message_ttl=timedelta(minutes=10),
+            max_len_bytes=100000000 # 100MB
+        ),
+    )       
+    
+    publisher = connection.publisher() # declares a publisher?
+    app.state.publisher = publisher
+    
+    try:
+        yield
+    finally:
+        environment.close()
+
+    # Close publisher
+
+def send_message(message, publisher):
+    message = Message(body=message.encode("utf-8"))
+    message = AddressHelper.message_to_address_helper(message, queue_address)
+    publisher.publish(message)
 
 app = FastAPI(title="Distributed LLM Evaluation Platform", lifespan=lifespan)
 
@@ -47,11 +77,14 @@ Remidner:
 '''
 
 @app.post("/runs")
-def create_run() -> dict[str, UUID]:
+def create_run(request: Request) -> dict[str, UUID]:
     run_id: UUID = uuid4()
+    case_execution_id: UUID = uuid4()
     print(f"Created run ifd: {run_id}")
     job = {
-                "run_id": "xyz", "case": {
+                "run_id": str(run_id), 
+                "case_execution_id": str(case_execution_id),
+                "case": {
                     "test_case_id": "lexical_count_01", 
                     "battery_id": "battery_01"
                 },
@@ -62,7 +95,10 @@ def create_run() -> dict[str, UUID]:
                 }
     }
     
-
+    # Enqueue job
+    send_message(
+        json.dumps(job), request.app.state.publisher
+    )
 
     return {"run_id": run_id, "case_execution_id": case_execution_id}
 
