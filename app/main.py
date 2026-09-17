@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     # Declare queue
     management = connection.management()
 
-    # management.delete_queue(name=queue_name)
+    # management.delete_queue(name=queue_name) # for cleaning things upc
 
     management.declare_queue(
         ClassicQueueSpecification(
@@ -100,18 +100,3 @@ def create_run(request: Request) -> dict[str, UUID]:
 
     return {"run_id": run_id, "case_execution_id": case_execution_id}
 
-TEST_REGISTRY = {
-    "battery_01": [
-        {
-            "test_case_id": "lexical_count_01",
-            "input": "How many R's in racecar?",
-            "expected": "2"
-        }, 
-        {
-            "test_case_id": "geographical_knowledge_01",
-            "input": "What's the capital of the state to the south of Oregon?",
-            "expected": "Sacramento"
-        }, 
-        
-    ]
-}
