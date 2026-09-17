@@ -1,0 +1,22 @@
+[project]
+name = "distributed-llm-evaluation-platform"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "mettavector", email = "226008721+mettavector@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "ollama>=0.6.2",
+    "rabbitmq-amqp-python-client>=1.0",
+    "uvicorn[standard]>=0.30,<1.0",
+]
+
+[project.scripts]
+distributed-llm-evaluation-platform = "distributed_llm_evaluation_platform:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
